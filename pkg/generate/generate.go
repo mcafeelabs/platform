@@ -415,7 +415,7 @@ func (g *generator) sandboxRouting(sb *registry.Sandbox, opts Options) error {
 			}}},
 		},
 		map[string]any{
-			"apiVersion": "gateway.networking.k8s.io/v1beta1", "kind": "ReferenceGrant",
+			"apiVersion": "gateway.networking.k8s.io/v1", "kind": "ReferenceGrant",
 			"metadata": map[string]any{"name": "from-baseline", "namespace": ns, "labels": labels},
 			"spec": map[string]any{
 				"from": []any{map[string]any{"group": "gateway.networking.k8s.io", "kind": "HTTPRoute", "namespace": s.Namespace}},

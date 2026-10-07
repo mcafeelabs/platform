@@ -9,11 +9,12 @@ git:
 chart:
   repoURL: https://github.com/mcafeelabs/platform-chart
   path: chart
-  revision: v0.1.0
+  # Pin to a tag or commit once platform-chart is tagged.
+  revision: main
 images:
   registry: ghcr.io/mcafeelabs
 tools:
-  image: ghcr.io/mcafeelabs/svcreg:v0.1.0
+  image: ghcr.io/mcafeelabs/svcreg:latest
 argocd:
   namespace: argocd
   project: default
