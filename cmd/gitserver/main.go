@@ -49,9 +49,10 @@ func main() {
 	}
 
 	h := &cgi.Handler{
-		Path: backend,
-		Args: []string{"http-backend"},
-		Env:  []string{"GIT_PROJECT_ROOT=" + *root, "GIT_HTTP_EXPORT_ALL=1"},
+		Path:   backend,
+		Args:   []string{"http-backend"},
+		Env:    []string{"GIT_PROJECT_ROOT=" + *root, "GIT_HTTP_EXPORT_ALL=1"},
+		Stderr: os.Stderr,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte("ok\n")) })
@@ -74,12 +75,32 @@ func main() {
 		}
 		h.ServeHTTP(w, r)
 	}))
-	srv := &http.Server{Addr: *addr, Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	srv := &http.Server{Addr: *addr, Handler: logRequests(mux), ReadHeaderTimeout: 10 * time.Second}
 	slog.Info("serving git", "root", *root, "addr", *addr)
 	if err := srv.ListenAndServe(); err != nil {
 		slog.Error("server stopped", "err", err)
 		os.Exit(1)
 	}
+}
+
+type statusWriter struct {
+	http.ResponseWriter
+	code int
+}
+
+func (w *statusWriter) WriteHeader(code int) {
+	w.code = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func logRequests(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sw := &statusWriter{ResponseWriter: w, code: http.StatusOK}
+		next.ServeHTTP(sw, r)
+		if r.URL.Path != "/healthz" {
+			slog.Info("request", "method", r.Method, "path", r.URL.Path, "query", r.URL.RawQuery, "status", sw.code, "user", u(r))
+		}
+	})
 }
 
 func u(r *http.Request) string {

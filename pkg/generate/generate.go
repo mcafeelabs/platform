@@ -591,6 +591,10 @@ func (g *generator) kargo() error {
 		return nil
 	}
 	project := cfg.Kargo.Project
+	interval := cfg.Kargo.Interval
+	if interval == "" {
+		interval = "5m0s"
+	}
 	constraint := cfg.Kargo.ImageConstraint
 	if constraint == "" {
 		constraint = ">=0.0.0"
@@ -611,6 +615,7 @@ func (g *generator) kargo() error {
 			"apiVersion": "kargo.akuity.io/v1alpha1", "kind": "Warehouse",
 			"metadata": map[string]any{"name": svc, "namespace": project},
 			"spec": map[string]any{
+				"interval": interval,
 				"subscriptions": []any{
 					map[string]any{"image": map[string]any{
 						"repoURL":                strings.TrimSuffix(cfg.Images.Registry, "/") + "/" + svc,

@@ -47,6 +47,8 @@ type Config struct {
 		Project string `json:"project"`
 		// ImageConstraint is the semver constraint Warehouses subscribe with.
 		ImageConstraint string `json:"imageConstraint,omitempty"`
+		// Interval is how often Warehouses look for new Freight.
+		Interval string `json:"interval,omitempty"`
 	} `json:"kargo"`
 	// Tools.Image is the svcreg image (kv-sync and the query service).
 	Tools struct {
