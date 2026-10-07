@@ -180,6 +180,11 @@ func wave(n int) map[string]any {
 	return map[string]any{"argocd.argoproj.io/sync-wave": strconv.Itoa(n)}
 }
 
+// compareOptions makes Argo CD diff with a server-side dry run, so fields
+// the API server defaults (HTTPRoute matches, StatefulSet claim templates,
+// CRD defaults) do not show up as drift.
+const compareOptions = "ServerSideDiff=true,IncludeMutationWebhook=true"
+
 func syncPolicy() map[string]any {
 	return map[string]any{
 		"automated":   map[string]any{"prune": true, "selfHeal": true},
@@ -250,6 +255,7 @@ func (g *generator) serviceApp(svc string, s envSettings) map[string]any {
 	chart := g.chartSource()
 	valuesRev, valuesFile := cfg.Git.Revision, "$values/rendered/"+s.Env+"/"+svc+"/values.yaml"
 	annotations := wave(g.waves[svc])
+	annotations["argocd.argoproj.io/compare-options"] = compareOptions
 	if s.Delivery == "kargo" {
 		valuesRev, valuesFile = StageBranch(s.Env, svc), "$values/values.yaml"
 		annotations["kargo.akuity.io/authorized-stage"] = cfg.Kargo.Project + ":" + StageName(svc, s.Env)
@@ -492,8 +498,9 @@ func (g *generator) platformApps() error {
 	app := func(name, path, destNS string) map[string]any {
 		return map[string]any{
 			"metadata": map[string]any{
-				"name":       name,
-				"finalizers": []any{"resources-finalizer.argocd.argoproj.io"},
+				"name":        name,
+				"annotations": map[string]any{"argocd.argoproj.io/compare-options": compareOptions},
+				"finalizers":  []any{"resources-finalizer.argocd.argoproj.io"},
 			},
 			"spec": map[string]any{
 				"project":     cfg.ArgoCD.Project,
@@ -554,7 +561,8 @@ func (g *generator) platformApps() error {
 			}}},
 			"template": map[string]any{
 				"metadata": map[string]any{
-					"name": "sbx-{{ index .path.segments 2 }}-{{ index .path.segments 3 }}",
+					"name":        "sbx-{{ index .path.segments 2 }}-{{ index .path.segments 3 }}",
+					"annotations": map[string]any{"argocd.argoproj.io/compare-options": compareOptions},
 					"labels": map[string]any{
 						"platform.mcafeelabs.io/sandbox": "{{ index .path.segments 2 }}",
 						"platform.mcafeelabs.io/service": "{{ index .path.segments 3 }}",
